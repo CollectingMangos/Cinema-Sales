@@ -1,0 +1,16 @@
+# Virtual environment
+venv/
+.venv/
+
+# Python cache and build files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py~
+*.egg-info/
+dist/
+build/
+
+# Environment variables
+.env
