@@ -24,7 +24,8 @@ print(f'[STARTING] Listening on server: {SERVER} & port: {PORT}')
 logging.info(f'Server is now listening on {SERVER}:{PORT}')
 
 def get_db_connection():
-    db_path = os.path.join(os.path.dirname(__file__), 'cinema.db')
+    db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'cinema.db'))
+    logging.debug(f'Database path: {db_path}')
     return sqlite3.connect(db_path)
 
 def handle_requests(request):
@@ -86,9 +87,14 @@ def delete_movie(title):
         if cursor.fetchone():
             cursor.execute('DELETE FROM movies WHERE title = ?', (title,))
             connection.commit()
-            return {'status':'success', 'message': f'Movie: {title} has been deleted successfully'}
+            logging.debug(f'Movie deleted: {title}')
+            return {'status': 'success', 'message': f'Movie: {title} has been deleted successfully'}
+        else:
+            logging.debug(f'Movie not found: {title}')
+            return {'status': 'error', 'message': f'Movie: {title} not found'}
     except:
-        return {'status':'error', 'message': f'Failed to delete movie: {title}'}
+        logging.error(f'Error deleting movie: {title}.')
+        return {'status': 'error', 'message': f'Failed to delete movie: {title}'}
     finally:
         connection.close()
 

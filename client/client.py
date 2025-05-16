@@ -17,7 +17,8 @@ client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(ADDRESS)
 
 request = {
-    'operation': 'get_movies'
+    'operation': 'get_movies',
+    # 'title': 'Avatar',
 }
 client.send(json.dumps(request).encode())
 logging.info(f'Sent request: {request}')

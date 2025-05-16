@@ -1,6 +1,8 @@
 import sqlite3
+import os
 
-connection = sqlite3.connect('cinema.db')
+db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'cinema.db'))
+connection = sqlite3.connect(db_path)
 cursor = connection.cursor()
 
 cursor.execute('''
@@ -42,4 +44,6 @@ cursor.executemany('''
 ''', movies)
 
 connection.commit()
+print("Database created successfully")
+
 connection.close()
