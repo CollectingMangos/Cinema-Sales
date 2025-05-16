@@ -14,6 +14,7 @@ ADDRESS = (SERVER, PORT)
 
 logging.info('Server is starting up')
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind(ADDRESS)
 
 server.listen()
@@ -21,7 +22,10 @@ print(f'[STARTING] Listening on server: {SERVER} & port: {PORT}')
 logging.info(f'Server is now listening on {SERVER}:{PORT}')
 
 def handle_requests(request):
-    pass
+    if request == 'get_movies':
+        return get_movies()
+    else:
+        return {'status':'failed', 'message': 'Invalid request'}
 
 def get_movies():
     try:
@@ -31,7 +35,7 @@ def get_movies():
         movies = cursor.fetchall()
         return {'status':'success', 'movies': movies}
     except:
-        return {'status':'error', 'message': 'Failed to fetch movies'}
+        return {'status':'error', 'message': 'Failed to get all movies'}
     finally:
         connection.close()
 
@@ -89,7 +93,9 @@ while True:
     print(f'[RECEIVED] {request}')
     logging.debug(f'Received request from {address}:{request}')
     
-    client.send('[SENT] Helllo from server!'.encode())
+    response = handle_requests(request)
+    
+    client.send(str(response).encode())
     logging.info(f'Sent response to {address}')
 
     client.close()

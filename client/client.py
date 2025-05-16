@@ -7,5 +7,8 @@ ADDRESS = (SERVER, PORT)
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(ADDRESS)
 
-client.send('Hello from client'.encode())
+client.send('get_movies'.encode())
+
 print(client.recv(1024).decode())
+
+client.close()
