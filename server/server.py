@@ -1,6 +1,8 @@
 import socket
 import sqlite3
 import logging
+import os
+import json
 
 logging.basicConfig(
     filename='server_log.log',
@@ -21,15 +23,34 @@ server.listen()
 print(f'[STARTING] Listening on server: {SERVER} & port: {PORT}')
 logging.info(f'Server is now listening on {SERVER}:{PORT}')
 
+def get_db_connection():
+    db_path = os.path.join(os.path.dirname(__file__), 'cinema.db')
+    return sqlite3.connect(db_path)
+
 def handle_requests(request):
-    if request == 'get_movies':
-        return get_movies()
-    else:
-        return {'status':'failed', 'message': 'Invalid request'}
+    try:
+        request = json.loads(request)
+        operation = request.get('operation')
+        if operation == 'get_movies':
+            return get_movies()
+        elif operation == 'delete_movie':
+            return delete_movie(request.get('title'))
+        elif operation == 'add_movie':
+            return add_movie()
+        elif operation == 'update_movie':
+            return update_movie()
+        elif operation == 'update_tickets_of_movie':
+            return update_tickets_of_movie()
+        elif operation == 'record_ticket_sale':
+            return record_ticket_sale()
+        else:
+            return {'status': 'failed', 'message': 'Invalid request'}
+    except json.JSONDecodeError:
+        return {'status': 'failed', 'message': 'Invalid JSON format'}
 
 def get_movies():
     try:
-        connection = sqlite3.connect('cinema.db')
+        connection = get_db_connection()
         cursor = connection.cursor()
         cursor.execute('SELECT * FROM movies')
         movies = cursor.fetchall()
@@ -41,7 +62,7 @@ def get_movies():
 
 def add_movie():
     try:
-        connection = sqlite3.connect('cinema.db')
+        connection = get_db_connection()        
         cursor = connection.cursor()
     except:
         pass
@@ -50,25 +71,30 @@ def add_movie():
 
 def update_movie():
     try:
-        connection = sqlite3.connect('cinema.db')
+        connection = get_db_connection()
         cursor = connection.cursor()
     except:
         pass
     finally:
         connection.close()
 
-def delete_movie():
+def delete_movie(title):
     try:
-        connection = sqlite3.connect('cinema.db')
+        connection = get_db_connection()
         cursor = connection.cursor()
+        cursor.execute('SELECT title FROM movies WHERE title = ?', (title,))
+        if cursor.fetchone():
+            cursor.execute('DELETE FROM movies WHERE title = ?', (title,))
+            connection.commit()
+            return {'status':'success', 'message': f'Movie: {title} has been deleted successfully'}
     except:
-        pass
+        return {'status':'error', 'message': f'Failed to delete movie: {title}'}
     finally:
         connection.close()
 
 def update_tickets_of_movie():
     try:
-        connection = sqlite3.connect('cinema.db')
+        connection = get_db_connection()
         cursor = connection.cursor()
     except:
         pass
@@ -77,7 +103,7 @@ def update_tickets_of_movie():
 
 def record_ticket_sale():
     try:
-        connection = sqlite3.connect('cinema.db')
+        connection = get_db_connection()
         cursor = connection.cursor()
     except:
         pass
@@ -95,7 +121,7 @@ while True:
     
     response = handle_requests(request)
     
-    client.send(str(response).encode())
+    client.send(json.dumps(response).encode())
     logging.info(f'Sent response to {address}')
 
     client.close()
