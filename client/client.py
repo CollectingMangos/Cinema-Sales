@@ -16,10 +16,21 @@ logging.info('Client is starting up')
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(ADDRESS)
 
-request = {
-    'operation': 'get_movies',
-    # 'title': 'Avatar',
-}
+# request = {
+#     'operation':'delete_movie',
+#     'title':'Avatar',
+# }
+
+# request = {
+#     'operation':'get_movies',
+# }
+
+# request = {
+#     'operation':'update_tickets_of_movie',
+#     'title':'Grown Ups',
+#     'tickets':'10'
+# }
+
 client.send(json.dumps(request).encode())
 logging.info(f'Sent request: {request}')
 
