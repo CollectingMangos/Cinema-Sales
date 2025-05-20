@@ -16,20 +16,50 @@ logging.info('Client is starting up')
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(ADDRESS)
 
-# request = {
-#     'operation':'delete_movie',
-#     'title':'Avatar',
-# }
+operation1 = {
+    'operation':'get_movies',
+}
 
-# request = {
-#     'operation':'get_movies',
-# }
+operation2 = {
+        'operation':'add_movie',
+    'title':'Test',    
+    'cinema_room':'2',
+    'release_date':'20-05-2025',
+    'end_date':'02-06-2025',
+    'tickets_available':'100',
+    'ticket_price':'420.0',
+}
 
-# request = {
-#     'operation':'update_tickets_of_movie',
-#     'title':'Grown Ups',
-#     'tickets':'10'
-# }
+operation3 = {
+    'operation':'update_movie_details',
+    'title':'Grown Ups',
+    'cinema_room':'2',
+    'release_date':'20-05-2025',
+    'end_date':'02-06-2025',
+    'tickets_available':'100',
+    'ticket_price':'420.0',
+}
+
+operation4 = {
+    'operation':'delete_movie',
+    'title':'Avatar',
+}
+
+operation5 = {
+    'operation':'update_tickets_of_movie',
+    'title':'Grown Ups',
+    'tickets_available':'10'
+}
+
+operation6 = {
+    'operation':'record_ticket_sale',
+    'title':'Avatar',
+    'customer_name':'Ruben Da Silva',
+    'number_of_tickets':'2',
+    'total':'200.0'
+}
+
+request = operation1
 
 client.send(json.dumps(request).encode())
 logging.info(f'Sent request: {request}')

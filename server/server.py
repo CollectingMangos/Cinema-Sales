@@ -36,9 +36,16 @@ def handle_requests(request):
         elif operation == 'delete_movie':
             return delete_movie(request.get('title'))
         elif operation == 'add_movie':
-            return add_movie()
+            return add_movie(
+                request.get('title'),
+                int(request.get('cinema_room')),
+                request.get('release_date'),
+                request.get('end_date'),
+                int(request.get('tickets_available')),
+                float(request.get('ticket_price'))
+            )
         elif operation == 'update_movie':
-            return update_movie()
+            return update_movie_details()
         elif operation == 'update_tickets_of_movie':
             return update_tickets_of_movie(request.get('title'), request.get('tickets'))
         elif operation == 'record_ticket_sale':
@@ -62,16 +69,37 @@ def get_movies():
     finally:
         connection.close()
 
-def add_movie():
+def add_movie(title, cinema_room, release_date, end_date, tickets_available, ticket_price):
     try:
-        connection = get_db_connection()        
+        title = title.strip()
+        connection = get_db_connection()
         cursor = connection.cursor()
-    except:
-        pass
+        if not (1 <= cinema_room <= 7):
+            return {'status': 'error', 'message': 'Cinema room must be between 1 and 7!'}
+        if tickets_available < 0:
+            return {'status': 'error', 'message': 'Tickets available must be greater than 0!'}
+        if ticket_price < 0:
+            return {'status': 'error', 'message': 'Ticket price must be greater than 0!'}
+        cursor.execute('SELECT title FROM movies WHERE title = ?', (title,))
+        if cursor.fetchone():
+            return {'status': 'error', 'message': f'Movie: {title} already exists!'}
+        cursor.execute('SELECT cinema_room FROM movies WHERE cinema_room = ?', (cinema_room,))
+        if cursor.fetchone():
+            return {'status': 'error', 'message': f'Cinema room {cinema_room} is already in use!'}
+        cursor.execute('''
+            INSERT INTO movies (title, cinema_room, release_date, end_date, tickets_available, ticket_price)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (title, cinema_room, release_date, end_date, tickets_available, ticket_price))
+        connection.commit()
+        logging.debug(f'Movie added: {title}')
+        return {'status': 'success', 'message': f'Movie: {title} has been added successfully'}
+    except Exception as e:
+        logging.error(f'Error adding the movie: {title}. {e}')
+        return {'status': 'error', 'message': f'Failed to add the movie: {title}'}
     finally:
         connection.close()
 
-def update_movie():
+def update_movie_details():
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
@@ -131,18 +159,14 @@ while True:
     client, address = server.accept()
     print(f'New connection from address: {address}')
     logging.info(f'New connection from {address}')
-
     request_data = client.recv(1024).decode()
     logging.debug(f'Received request from {address}: {request_data}')
-
     try:
         request = json.loads(request_data)
         response = handle_requests(request)
     except json.JSONDecodeError:
         response = {'status': 'failed', 'message': 'Invalid JSON format'}
-    
     client.send(json.dumps(response).encode())
     logging.info(f'Sent response to {address}')
-
     client.close()
     logging.info(f'Connection closed to {address}')
