@@ -1,0 +1,6 @@
+--- RECEIPT OF SALE ---
+Movie ID: 9
+Title: Test
+Customer: Ruben Da Silva
+Tickets Purchased: 2
+Total: R840.00

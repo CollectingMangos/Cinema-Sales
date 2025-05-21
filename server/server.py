@@ -3,6 +3,7 @@ import sqlite3
 import logging
 import os
 import json
+from datetime import datetime
 
 logging.basicConfig(
     filename='server_log.log',
@@ -55,7 +56,12 @@ def handle_requests(request):
         elif operation == 'update_tickets_of_movie':
             return update_tickets_of_movie(request.get('title'),int(request.get('tickets_available')))
         elif operation == 'record_ticket_sale':
-            return record_ticket_sale()
+            return record_ticket_sale(
+                request.get('title'),
+                request.get('customer_name'),
+                int(request.get('number_of_tickets')),
+                float(request.get('total'))
+            )
         else:
             return {'status': 'failed', 'message': 'Invalid request'}
     except json.JSONDecodeError:
@@ -171,12 +177,74 @@ def update_tickets_of_movie(title, tickets_available):
     finally:
         connection.close()
 
-def record_ticket_sale():
+from datetime import datetime
+
+def record_ticket_sale(title, customer_name, number_of_tickets, total):
     try:
+        title = title.strip()
+        customer_name = customer_name.strip()
+        number_of_tickets = int(number_of_tickets)
+        total = float(total)
+
         connection = get_db_connection()
         cursor = connection.cursor()
-    except:
-        pass
+
+        cursor.execute('SELECT id, tickets_available, ticket_price FROM movies WHERE title = ?', (title,))
+        movie = cursor.fetchone()
+
+        if not movie:
+            logging.debug(f'Movie not found: {title}')
+            return {'status': 'error', 'message': f'Movie: {title} not found!'}
+
+        movie_id, tickets_available, ticket_price = movie
+
+        if tickets_available < number_of_tickets:
+            logging.debug(f'Not enough tickets available for movie: {title}')
+            return {'status': 'error', 'message': 'Not enough tickets available for this movie!'}
+
+        if total != number_of_tickets * ticket_price:
+            logging.debug(f'Total does not match the number of tickets for movie: {title}')
+            return {'status': 'error', 'message': 'Total does not match the number of tickets!'}
+
+        cursor.execute('''
+            INSERT INTO sales (movie_id, customer_name, number_of_tickets, total)
+            VALUES (?, ?, ?, ?)
+        ''', (movie_id, customer_name, number_of_tickets, total))
+
+        cursor.execute('''
+            UPDATE movies
+            SET tickets_available = tickets_available - ?
+            WHERE id = ?
+        ''', (number_of_tickets, movie_id))
+
+        connection.commit()
+
+        receipt_content = (
+            f"--- RECEIPT OF SALE ---\n"
+            f"Movie ID: {movie_id}\n"
+            f"Title: {title}\n"
+            f"Customer: {customer_name}\n"
+            f"Tickets Purchased: {number_of_tickets}\n"
+            f"Total: R{total:.2f}\n"
+        )
+        receipts_dir = os.path.join(os.path.dirname(__file__), 'receipts')
+        os.makedirs(receipts_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        receipt_filename = f"receipt_{movie_id}_{customer_name.replace(' ', '_')}_{timestamp}.txt"
+        receipt_path = os.path.join(receipts_dir, receipt_filename)
+        with open(receipt_path, 'w') as file:
+            file.write(receipt_content)
+        logging.debug(f'Sale recorded and receipt saved: {receipt_filename}')
+        return {
+            'status': 'success',
+            'message': f'Tickets purchased successfully! Receipt saved as {receipt_filename}'
+        }
+    except Exception as e:
+        logging.error(f'Error recording ticket sale for movie: {title}. {e}')
+        return {
+            'status': 'error',
+            'message': f'Failed to record ticket sale for movie: {title}'
+        }
     finally:
         connection.close()
 

@@ -50,15 +50,15 @@ operation5 = {
     'tickets_available':'100'
 }
 
-# operation6 = {
-#     'operation':'record_ticket_sale',
-#     'title':'Avatar',
-#     'customer_name':'Ruben Da Silva',
-#     'number_of_tickets':'2',
-#     'total':'200.0'
-# }
+operation6 = {
+    'operation':'record_ticket_sale',
+    'title':'Test',
+    'customer_name':'Ruben Da Silva',
+    'number_of_tickets':'2',
+    'total':'840.0'
+}
 
-request = operation2
+request = operation1
 
 client.send(json.dumps(request).encode())
 logging.info(f'Sent request: {request}')
