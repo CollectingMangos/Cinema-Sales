@@ -44,7 +44,7 @@ def handle_requests(request):
                 int(request.get('tickets_available')),
                 float(request.get('ticket_price'))
             )
-        elif operation == 'update_movie':
+        elif operation == 'update_movie_details':
             return update_movie_details()
         elif operation == 'update_tickets_of_movie':
             return update_tickets_of_movie(request.get('title'), request.get('tickets'))
@@ -99,10 +99,11 @@ def add_movie(title, cinema_room, release_date, end_date, tickets_available, tic
     finally:
         connection.close()
 
-def update_movie_details():
+def update_movie_details(title, cinema_room, release_date, end_date, ticket_price):
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
+        
     except:
         pass
     finally:
