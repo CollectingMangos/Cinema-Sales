@@ -23,42 +23,43 @@ operation1 = {
 operation2 = {
         'operation':'add_movie',
     'title':'Test',    
-    'cinema_room':'1',
+    'cinema_room':'7',
     'release_date':'20-05-2025',
     'end_date':'02-06-2025',
-    'tickets_available':'100',
+    'tickets_available':'69',
     'ticket_price':'420.0',
 }
 
 operation3 = {
     'operation':'update_movie_details',
-    'title':'Grown Ups',
-    'cinema_room':'1',
-    'release_date':'20-05-2025',
+    'id':'8',
+    'title':'Lilo & Stitch',
+    'cinema_room':'7',
+    'release_date':'21-06-2002',
     'end_date':'02-06-2025',
-    'ticket_price':'420.0',
+    'ticket_price':'50.0',
 }
 
 operation4 = {
     'operation':'delete_movie',
-    'title':'Test',
+    'title':'Lilo & Stitch',
 }
 
 operation5 = {
     'operation':'update_tickets_of_movie',
-    'title':'Grown Ups',
-    'tickets_available':'100'
+    'title':'Lilo & Stitch',
+    'tickets_available':'125'
 }
 
 operation6 = {
     'operation':'record_ticket_sale',
-    'title':'Test',
+    'title':'Avatar',
     'customer_name':'Ruben Da Silva',
     'number_of_tickets':'2',
-    'total':'840.0'
+    'total':'300.0'
 }
 
-request = operation1
+request = operation6
 
 client.send(json.dumps(request).encode())
 logging.info(f'Sent request: {request}')

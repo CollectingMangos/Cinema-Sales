@@ -47,6 +47,7 @@ def handle_requests(request):
                 )
         elif operation == 'update_movie_details':
             return update_movie_details(
+                int(request.get('id')),
                 request.get('title'),
                 int(request.get('cinema_room')),
                 request.get('release_date'),
@@ -76,7 +77,8 @@ def get_movies():
         cursor.execute('SELECT * FROM movies')
         movies = cursor.fetchall()
         return {'status':'success', 'movies': movies}
-    except:
+    except Exception as e:
+        logging.error(f'Error fetching movies: {e}')
         return {'status':'error', 'message': 'Failed to get all movies'}
     finally:
         connection.close()
@@ -111,28 +113,29 @@ def add_movie(title, cinema_room, release_date, end_date, tickets_available, tic
     finally:
         connection.close()
 
-def update_movie_details(title, cinema_room, release_date, end_date, ticket_price):
+def update_movie_details(movie_id, title, cinema_room, release_date, end_date, ticket_price):
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
-        cursor.execute('SELECT title FROM movies WHERE title = ?', (title,))
+        cursor.execute('SELECT id FROM movies WHERE id = ?', (movie_id,))
         if not cursor.fetchone():
-            logging.debug(f'Movie not found: {title}')
-            return {'status': 'error', 'message': f'Movie: {title} not found!'}
+            logging.debug(f'Movie not found with ID: {movie_id}')
+            return {'status': 'error', 'message': f'Movie with ID: {movie_id} not found!'}
         cursor.execute('''
             UPDATE movies
-            SET cinema_room = ?, release_date = ?, end_date = ?, ticket_price = ?
-            WHERE title = ?
-        ''', (cinema_room, release_date, end_date, ticket_price, title))
+            SET title = ?, cinema_room = ?, release_date = ?, end_date = ?, ticket_price = ?
+            WHERE id = ?
+        ''', (title, cinema_room, release_date, end_date, ticket_price, movie_id))
         connection.commit()
-        logging.debug(f'Movie details updated: {title}')
-        return {'status': 'success', 'message': f'Movie: {title} has been updated successfully!'}
+        logging.debug(f'Movie details updated for ID: {movie_id}')
+        return {'status': 'success', 'message': f'Movie with ID: {movie_id} has been updated successfully!'}
     except Exception as e:
-        logging.error(f'Error updating movie details: {title}. {e}')
-        return {'status': 'error', 'message': f'Failed to update movie: {title}'}
+        logging.error(f'Error updating movie details for ID: {movie_id}. {e}')
+        return {'status': 'error', 'message': f'Failed to update movie with ID: {movie_id}'}
     finally:
-        connection.close()
-
+        if connection:
+            connection.close()
+            
 def delete_movie(title):
     try:
         connection = get_db_connection()
@@ -146,8 +149,8 @@ def delete_movie(title):
         else:
             logging.debug(f'Movie not found: {title}')
             return {'status': 'error', 'message': f'Movie: {title} not found'}
-    except:
-        logging.error(f'Error deleting movie: {title}.')
+    except Exception as e:
+        logging.error(f'Error deleting movie: {title}. {e}')
         return {'status': 'error', 'message': f'Failed to delete movie: {title}'}
     finally:
         connection.close()
@@ -177,46 +180,35 @@ def update_tickets_of_movie(title, tickets_available):
     finally:
         connection.close()
 
-from datetime import datetime
-
 def record_ticket_sale(title, customer_name, number_of_tickets, total):
     try:
         title = title.strip()
         customer_name = customer_name.strip()
         number_of_tickets = int(number_of_tickets)
         total = float(total)
-
         connection = get_db_connection()
         cursor = connection.cursor()
-
         cursor.execute('SELECT id, tickets_available, ticket_price FROM movies WHERE title = ?', (title,))
         movie = cursor.fetchone()
-
         if not movie:
             logging.debug(f'Movie not found: {title}')
             return {'status': 'error', 'message': f'Movie: {title} not found!'}
-
         movie_id, tickets_available, ticket_price = movie
-
         if tickets_available < number_of_tickets:
             logging.debug(f'Not enough tickets available for movie: {title}')
             return {'status': 'error', 'message': 'Not enough tickets available for this movie!'}
-
         if total != number_of_tickets * ticket_price:
             logging.debug(f'Total does not match the number of tickets for movie: {title}')
             return {'status': 'error', 'message': 'Total does not match the number of tickets!'}
-
         cursor.execute('''
             INSERT INTO sales (movie_id, customer_name, number_of_tickets, total)
             VALUES (?, ?, ?, ?)
         ''', (movie_id, customer_name, number_of_tickets, total))
-
         cursor.execute('''
             UPDATE movies
             SET tickets_available = tickets_available - ?
             WHERE id = ?
         ''', (number_of_tickets, movie_id))
-
         connection.commit()
 
         receipt_content = (

@@ -1,0 +1,6 @@
+--- RECEIPT OF SALE ---
+Movie ID: 2
+Title: Avatar
+Customer: Ruben Da Silva
+Tickets Purchased: 2
+Total: R300.00
