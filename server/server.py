@@ -43,11 +43,17 @@ def handle_requests(request):
                 request.get('end_date'),
                 int(request.get('tickets_available')),
                 float(request.get('ticket_price'))
-            )
+                )
         elif operation == 'update_movie_details':
-            return update_movie_details()
+            return update_movie_details(
+                request.get('title'),
+                int(request.get('cinema_room')),
+                request.get('release_date'),
+                request.get('end_date'),
+                float(request.get('ticket_price'))
+                )
         elif operation == 'update_tickets_of_movie':
-            return update_tickets_of_movie(request.get('title'), request.get('tickets'))
+            return update_tickets_of_movie(request.get('title'),int(request.get('tickets_available')))
         elif operation == 'record_ticket_sale':
             return record_ticket_sale()
         else:
@@ -103,9 +109,21 @@ def update_movie_details(title, cinema_room, release_date, end_date, ticket_pric
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
-        
-    except:
-        pass
+        cursor.execute('SELECT title FROM movies WHERE title = ?', (title,))
+        if not cursor.fetchone():
+            logging.debug(f'Movie not found: {title}')
+            return {'status': 'error', 'message': f'Movie: {title} not found!'}
+        cursor.execute('''
+            UPDATE movies
+            SET cinema_room = ?, release_date = ?, end_date = ?, ticket_price = ?
+            WHERE title = ?
+        ''', (cinema_room, release_date, end_date, ticket_price, title))
+        connection.commit()
+        logging.debug(f'Movie details updated: {title}')
+        return {'status': 'success', 'message': f'Movie: {title} has been updated successfully!'}
+    except Exception as e:
+        logging.error(f'Error updating movie details: {title}. {e}')
+        return {'status': 'error', 'message': f'Failed to update movie: {title}'}
     finally:
         connection.close()
 
@@ -130,11 +148,17 @@ def delete_movie(title):
 
 def update_tickets_of_movie(title, tickets_available):
     try:
+        title = title.strip()
+        tickets_available = int(tickets_available)
+        logging.debug(f'Parsed tickets_available: {tickets_available}')
         connection = get_db_connection()
         cursor = connection.cursor()
         cursor.execute('SELECT title FROM movies WHERE title = ?', (title,))
         if cursor.fetchone():
-            cursor.execute('UPDATE movies SET tickets_available = ? WHERE title = ?', (tickets_available, title))
+            cursor.execute(
+                'UPDATE movies SET tickets_available = ? WHERE title = ?', 
+                (tickets_available, title)
+            )
             connection.commit()
             logging.debug(f'Tickets updated for movie: {title}')
             return {'status': 'success', 'message': f'Tickets updated for movie: {title}'}
