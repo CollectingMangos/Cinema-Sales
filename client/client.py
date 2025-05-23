@@ -2,7 +2,7 @@ import socket
 import json
 import logging
 import tkinter
-from tkinter import *
+from tkinter import ttk, messagebox
 
 logging.basicConfig(
     filename='client_log.log',
@@ -14,13 +14,13 @@ PORT = 5050
 SERVER = '127.0.0.1'
 ADDRESS = (SERVER, PORT)
 
-def send_request(request_data):
+def send_request(request):
     try:
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         logging.info("Client started up.")
         client.connect(ADDRESS)
         logging.info(f"Connected to server at {ADDRESS}.")
-        client.send(json.dumps(request_data).encode())
+        client.send(json.dumps(request).encode())
         response = client.recv(2048).decode()
         client.close()
         return json.loads(response)
@@ -28,6 +28,7 @@ def send_request(request_data):
         logging.error(f"Error sending request: {e}")
         return {'status': 'error', 'message': str(e)}
         
+# Example operations
 # operation1 = {
 #     'operation':'get_movies',
 # }
@@ -73,7 +74,133 @@ def send_request(request_data):
 
 # request = operation6
 
+def get_movies():
+    pass
+
+def open_add_movie_window():
+    add_window = tkinter.Toplevel(window)
+    add_window.title("Add a New Movie")
+    add_window.geometry("600x400")
+
+    fields = {
+        "Title": tkinter.Entry(add_window),
+        "Cinema Room": tkinter.Entry(add_window),
+        "Release Date (DD-MM-YYYY)": tkinter.Entry(add_window),
+        "End Date (DD-MM-YYYY)": tkinter.Entry(add_window),
+        "Tickets Available": tkinter.Entry(add_window),
+        "Ticket Price": tkinter.Entry(add_window),
+    }
+
+    for idx, (label, entry) in enumerate(fields.items()):
+        tkinter.Label(add_window, text=label).grid(row=idx, column=0, padx=10, pady=5, sticky="e")
+        entry.grid(row=idx, column=1, padx=10, pady=5)
+
+    def save_movie():
+        request = {
+            'operation': 'add_movie',
+            'title': fields["Title"].get(),
+            'cinema_room': fields["Cinema Room"].get(),
+            'release_date': fields["Release Date (DD-MM-YYYY)"].get(),
+            'end_date': fields["End Date (DD-MM-YYYY)"].get(),
+            'tickets_available': fields["Tickets Available"].get(),
+            'ticket_price': fields["Ticket Price"].get(),
+        }
+        response = send_request(request)
+        messagebox.showinfo("Add Movie", response['message'])
+        add_window.destroy()
+
+    tkinter.Button(add_window, text="Save", command=save_movie).grid(row=len(fields), column=0, columnspan=2, pady=10)
+    
+def open_update_movie_window():
+    update_window= tkinter.Toplevel(window)
+    update_window.title("Update a Movie's Details")
+    update_window.geometry("600x400")
+    
+    fields = {
+        "Movie ID": tkinter.Entry(update_window),
+        "Title": tkinter.Entry(update_window),
+        "Cinema Room": tkinter.Entry(update_window),
+        "Release Date (DD-MM-YYYY)": tkinter.Entry(update_window),
+        "End Date (DD-MM-YYYY)": tkinter.Entry(update_window),
+        "Ticket Price": tkinter.Entry(update_window),
+    }
+    for idx, (label, entry) in enumerate(fields.items()):
+        tkinter.Label(update_window, text=label).grid(row=idx, column=0, padx=10, pady=5, sticky="e")
+        entry.grid(row=idx, column=1, padx=10, pady=5)
+        
+        def update_movie():
+            request = {
+                'operation': 'update_movie_details',
+                'id': fields["Movie ID"].get(),
+                'title': fields["Title"].get(),
+                'cinema_room': fields["Cinema Room"].get(),
+                'release_date': fields["Release Date (DD-MM-YYYY)"].get(),
+                'end_date': fields["End Date (DD-MM-YYYY)"].get(),
+                'ticket_price': fields["Ticket Price"].get(),
+            }
+            response = send_request(request)
+            messagebox.showinfo("Update Movie", response['message'])
+            update_window.destroy()
+    tkinter.Button(update_window, text="Update", command=update_movie).grid(row=len(fields), column=0, columnspan=2, pady=10)
+    
+def open_delete_movie_window():
+    delete_window = tkinter.Toplevel(window)
+    delete_window.title("Delete a Movie")
+    delete_window.geometry("600x100")
+
+    tkinter.Label(delete_window, text="Select Movie to Delete:").grid(row=0, column=0, padx=10, pady=10, sticky="e")
+
+    movie_var = tkinter.StringVar()
+    movie_dropdown = ttk.Combobox(delete_window, textvariable=movie_var, state="readonly", width=30)
+    movie_dropdown.grid(row=0, column=1, padx=10, pady=10)
+
+    response = send_request({'operation': 'get_movies'})
+    if response['status'] == 'success':
+        movie_titles = [movie[1] for movie in response['movies']]  # movie[1] is the title
+        movie_dropdown['values'] = movie_titles
+    else:
+        messagebox.showerror("Error", response['message'])
+
+    def delete_movie():
+        title = movie_var.get()
+        if not title:
+            messagebox.showwarning("Missing Input", "Please select a movie.")
+            return
+
+        request = {
+            'operation': 'delete_movie',
+            'title': title,
+        }
+        response = send_request(request)
+        messagebox.showinfo("Delete Movie", response['message'])
+        delete_window.destroy()
+
+    tkinter.Button(delete_window, text="Delete", command=delete_movie).grid(row=1, column=0, columnspan=2, pady=10)
+
 window = tkinter.Tk()
 window.title("Cinema Sales System - BE.2022.V6T6C1")
-window.geometry("800x450")
+window.geometry("600x400")
+
+main_frame = tkinter.Frame(window, padx=20, pady=20)
+main_frame.grid(row=0, column=0, sticky="nsew")
+
+tkinter.Label(main_frame, text="Select a Movie:").grid(row=0, column=0, sticky="e", padx=5, pady=5)
+movie_variable = tkinter.StringVar()
+movie_dropdown = ttk.Combobox(main_frame, textvariable=movie_variable, state="readonly", width=30)
+movie_dropdown.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+
+tkinter.Label(main_frame, text="Number of Tickets to Purchase:").grid(row=1, column=0, sticky="e", padx=5, pady=5)
+ticket_entry = tkinter.Entry(main_frame, width=10)
+ticket_entry.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+
+tkinter.Button(main_frame, text="Add to Cart").grid(row=2, column=0, columnspan=2, pady=5)
+
+total_label = tkinter.Label(main_frame, text="Total: R0.00", font=('Arial', 10, 'bold'))
+total_label.grid(row=3, column=0, columnspan=2, pady=5)
+
+tkinter.Button(main_frame, text="Purchase Tickets").grid(row=4, column=0, columnspan=2, pady=10)
+tkinter.Button(main_frame, text="Add Movie", command=lambda: open_add_movie_window()).grid(row=5, column=0, columnspan=2, pady=10)
+tkinter.Button(main_frame, text="Update Movie", command=lambda: open_update_movie_window()).grid(row=6, column=0, columnspan=2, pady=10)
+tkinter.Button(main_frame, text="Delete Movie", command=lambda: open_delete_movie_window()).grid(row=7, column=0, columnspan=2, pady=10)
+
 window.mainloop()
