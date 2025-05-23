@@ -75,7 +75,58 @@ def send_request(request):
 # request = operation6
 
 def get_movies():
-    pass
+    result = send_request({'operation': 'get_movies'})
+    if result['status'] == 'success':
+        movies = result['movies']
+        movie_dropdown['values'] = [movie[1] for movie in movies]
+        return movies
+    else:
+        messagebox.showerror("Error", result['message'])
+        return []
+
+def calculate_total_and_display():
+    try:
+        selected_title = movie_variable.get()
+        qty = int(ticket_entry.get())
+        all_movies = get_movies()
+        movie = next((m for m in all_movies if m[1] == selected_title), None)
+        if not movie:
+            raise Exception("Movie not found")
+        price = movie[6]
+        total = qty * price
+        total_label.config(text=f"Total: R{total:.2f}")
+        return total
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
+        return None
+
+def purchase_tickets():
+    selected_title = movie_variable.get()
+    qty = ticket_entry.get()
+    try:
+        qty = int(qty)
+        if qty <= 0:
+            raise ValueError("Quantity must be greater than 0")
+        all_movies = get_movies()
+        movie = next((m for m in all_movies if m[1] == selected_title), None)
+        if not movie:
+            raise Exception("Movie not found")
+        price = movie[6]
+        total = qty * price
+        sale_request = {
+            'operation': 'record_ticket_sale',
+            'title': selected_title,
+            'customer_name': 'GUI User',
+            'number_of_tickets': str(qty),
+            'total': str(total)
+        }
+        result = send_request(sale_request)
+        if result['status'] == 'success':
+            messagebox.showinfo("Success", result['message'])
+        else:
+            messagebox.showerror("Failed", result['message'])
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
 
 def open_add_movie_window():
     add_window = tkinter.Toplevel(window)
@@ -156,7 +207,7 @@ def open_delete_movie_window():
 
     response = send_request({'operation': 'get_movies'})
     if response['status'] == 'success':
-        movie_titles = [movie[1] for movie in response['movies']]  # movie[1] is the title
+        movie_titles = [movie[1] for movie in response['movies']]
         movie_dropdown['values'] = movie_titles
     else:
         messagebox.showerror("Error", response['message'])
@@ -188,17 +239,18 @@ tkinter.Label(main_frame, text="Select a Movie:").grid(row=0, column=0, sticky="
 movie_variable = tkinter.StringVar()
 movie_dropdown = ttk.Combobox(main_frame, textvariable=movie_variable, state="readonly", width=30)
 movie_dropdown.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+get_movies()
 
 tkinter.Label(main_frame, text="Number of Tickets to Purchase:").grid(row=1, column=0, sticky="e", padx=5, pady=5)
 ticket_entry = tkinter.Entry(main_frame, width=10)
 ticket_entry.grid(row=1, column=1, sticky="w", padx=5, pady=5)
 
-tkinter.Button(main_frame, text="Add to Cart").grid(row=2, column=0, columnspan=2, pady=5)
+tkinter.Button(main_frame, text="Add to Cart", command=calculate_total_and_display).grid(row=2, column=0, columnspan=2, pady=5)
 
 total_label = tkinter.Label(main_frame, text="Total: R0.00", font=('Arial', 10, 'bold'))
 total_label.grid(row=3, column=0, columnspan=2, pady=5)
 
-tkinter.Button(main_frame, text="Purchase Tickets").grid(row=4, column=0, columnspan=2, pady=10)
+tkinter.Button(main_frame, text="Purchase Tickets", command=purchase_tickets).grid(row=4, column=0, columnspan=2, pady=10)
 tkinter.Button(main_frame, text="Add Movie", command=lambda: open_add_movie_window()).grid(row=5, column=0, columnspan=2, pady=10)
 tkinter.Button(main_frame, text="Update Movie", command=lambda: open_update_movie_window()).grid(row=6, column=0, columnspan=2, pady=10)
 tkinter.Button(main_frame, text="Delete Movie", command=lambda: open_delete_movie_window()).grid(row=7, column=0, columnspan=2, pady=10)
