@@ -75,5 +75,5 @@ def send_request(request_data):
 
 window = tkinter.Tk()
 window.title("Cinema Sales System - BE.2022.V6T6C1")
-window.geometry("400x250")
+window.geometry("800x450")
 window.mainloop()
