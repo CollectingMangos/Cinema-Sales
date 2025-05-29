@@ -1,0 +1,6 @@
+--- RECEIPT OF SALE ---
+Movie ID: 1
+Title: Grown Ups
+Customer: GUI User
+Tickets Purchased: 2
+Total: R200.00
