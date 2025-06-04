@@ -28,7 +28,7 @@ def send_request(request):
         logging.error(f"Error sending request: {e}")
         return {'status': 'error', 'message': str(e)}
         
-# Example operations
+# Initial test operations
 # operation1 = {
 #     'operation':'get_movies',
 # }
@@ -194,6 +194,59 @@ def open_update_movie_window():
             update_window.destroy()
     tkinter.Button(update_window, text="Update", command=update_movie).grid(row=len(fields), column=0, columnspan=2, pady=10)
     
+def open_update_tickets_window():
+    update_tickets_window = tkinter.Toplevel(window)
+    update_tickets_window.title("Update Tickets Available")
+    update_tickets_window.geometry("600x200")
+
+    tkinter.Label(update_tickets_window, text="Select Movie:").grid(row=0, column=0, padx=10, pady=10, sticky="e")
+    
+    movie_var = tkinter.StringVar()
+    movie_dropdown = ttk.Combobox(update_tickets_window, textvariable=movie_var, state="readonly", width=30)
+    movie_dropdown.grid(row=0, column=1, padx=10, pady=10)
+    
+    response = send_request({'operation': 'get_movies'})
+    if response['status'] == 'success':
+        movie_titles = [movie[1] for movie in response['movies']]
+        movie_dropdown['values'] = movie_titles
+    else:
+        messagebox.showerror("Error", response['message'])
+        update_tickets_window.destroy()
+        return
+
+    tkinter.Label(update_tickets_window, text="New Tickets Available:").grid(row=1, column=0, padx=10, pady=10, sticky="e")
+    tickets_entry = tkinter.Entry(update_tickets_window, width=10)
+    tickets_entry.grid(row=1, column=1, padx=10, pady=10, sticky="w")
+
+    def update_tickets():
+        selected_movie = movie_var.get()
+        new_tickets = tickets_entry.get()
+        
+        if not selected_movie:
+            messagebox.showwarning("Missing Input", "Please select a movie.")
+            return
+        if not new_tickets:
+            messagebox.showwarning("Missing Input", "Please enter the new tickets available.")
+            return
+        
+        try:
+            tickets_int = int(new_tickets)
+            if tickets_int < 0:
+                raise ValueError("Tickets must be a positive number")
+                
+            request = {
+                'operation': 'update_tickets_of_movie',
+                'title': selected_movie,
+                'tickets_available': str(tickets_int)
+            }
+            response = send_request(request)
+            messagebox.showinfo("Update Tickets", response['message'])
+            update_tickets_window.destroy()
+        except ValueError as e:
+            messagebox.showerror("Invalid Input", str(e))
+
+    tkinter.Button(update_tickets_window,text="Update Tickets", command=update_tickets).grid(row=2, column=0, columnspan=2, pady=10)
+    
 def open_delete_movie_window():
     delete_window = tkinter.Toplevel(window)
     delete_window.title("Delete a Movie")
@@ -253,6 +306,7 @@ total_label.grid(row=3, column=0, columnspan=2, pady=5)
 tkinter.Button(main_frame, text="Purchase Tickets", command=purchase_tickets).grid(row=4, column=0, columnspan=2, pady=10)
 tkinter.Button(main_frame, text="Add Movie", command=lambda: open_add_movie_window()).grid(row=5, column=0, columnspan=2, pady=10)
 tkinter.Button(main_frame, text="Update Movie", command=lambda: open_update_movie_window()).grid(row=6, column=0, columnspan=2, pady=10)
-tkinter.Button(main_frame, text="Delete Movie", command=lambda: open_delete_movie_window()).grid(row=7, column=0, columnspan=2, pady=10)
+tkinter.Button(main_frame, text="Update Available Tickets", command=lambda: open_update_tickets_window()).grid(row=7, column=0, columnspan=2, pady=10)
+tkinter.Button(main_frame, text="Delete Movie", command=lambda: open_delete_movie_window()).grid(row=8, column=0, columnspan=2, pady=10)
 
 window.mainloop()

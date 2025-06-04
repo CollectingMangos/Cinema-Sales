@@ -1,0 +1,6 @@
+--- RECEIPT OF SALE ---
+Movie ID: 8
+Title: Final Destination: Bloodlines
+Customer: GUI User
+Tickets Purchased: 5
+Total: R1000.00

@@ -1,0 +1,6 @@
+--- RECEIPT OF SALE ---
+Movie ID: 2
+Title: Avatar
+Customer: GUI User
+Tickets Purchased: 3
+Total: R450.00
